@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
+        <h2 style="color: #007bff;">Looking Forward to Our Call!</h2>
+
+        <p>Hi {{ name }},</p>
+
+        <p>Thanks for scheduling a call with us! I'm excited to discuss how we can help {{ company }} achieve your goals with our body composition tracking solutions.</p>
+
+        <div style="background-color: white; padding: 20px; margin: 20px 0; border-left: 4px solid #007bff;">
+            <p style="margin: 0;"><strong>Your Call:</strong></p>
+            <p style="margin: 10px 0 0 0;">{{ call_time }}</p>
+            {% if call_link %}
+            <p style="margin: 10px 0 0 0;"><a href="{{ call_link }}">Join Call</a></p>
+            {% endif %}
+        </div>
+
+        <h3>In the meantime, here are some resources:</h3>
+
+        <ul style="line-height: 1.8;">
+            <li><a href="#">Product Overview</a> - See what we offer</li>
+            <li><a href="#">Case Studies</a> - Success stories from similar organizations</li>
+            <li><a href="#">Technical Specs</a> - Full specifications and integrations</li>
+            <li><a href="#">Security & Compliance</a> - HIPAA and data security information</li>
+        </ul>
+
+        <p>If you have any questions before our call, feel free to reply to this email anytime.</p>
+
+        <p>Best regards,<br>
+        Josh Israel<br>
+        Hume</p>
+
+        <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+
+        <p style="font-size: 12px; color: #666; text-align: center;">
+            <a href="{{unsubscribe}}">Unsubscribe</a>
+        </p>
+    </div>
+</body>
+</html>

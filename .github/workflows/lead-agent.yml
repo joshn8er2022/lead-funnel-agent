@@ -1,0 +1,103 @@
+name: Lead Funnel Automation Agent
+
+on:
+  # Run twice daily (9am and 5pm PT = 16:00 and 00:00 UTC)
+  schedule:
+    - cron: '0 16 * * *'  # 9am PT
+    - cron: '0 0 * * *'   # 5pm PT (previous day)
+
+  # Webhook trigger from Typeform
+  repository_dispatch:
+    types: [typeform_submission]
+
+  # Manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'scheduled_run'
+        type: choice
+        options:
+          - scheduled_run
+          - process_submission
+          - test_integrations
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Lead Agent
+        env:
+          # API Keys from GitHub Secrets
+          TYPEFORM_TOKEN: ${{ secrets.TYPEFORM_TOKEN }}
+          CLOSE_API_KEY: ${{ secrets.CLOSE_API_KEY }}
+          CLOSE_CLIENT_ID: ${{ secrets.CLOSE_CLIENT_ID }}
+          CLOSE_CLIENT_SECRET: ${{ secrets.CLOSE_CLIENT_SECRET }}
+          CALENDLY_TOKEN: ${{ secrets.CALENDLY_TOKEN }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_PHONE_NUMBER: ${{ secrets.TWILIO_PHONE_NUMBER }}
+
+          # Configuration
+          TYPEFORM_HC_FORM_ID: 'F7whHyXK'
+          TYPEFORM_HW_FORM_ID: 'wR9Ufu8Z'
+          CALENDLY_ORG: 'josh-myhumehealth'
+          SENDGRID_FROM_NAME: 'Josh Israel'
+          SENDGRID_FROM_EMAIL: 'josh@humeprograms.com'
+          SENDGRID_REPLY_TO: 'josh@myhumehealth.com'
+          SLACK_CHANNEL_ID: '#ai-test'
+
+          # Auto-approve all tools (critical for automation)
+          CLAUDE_AUTO_APPROVE: 'bash,python,webfetch'
+
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event.inputs.action }}" = "scheduled_run" ]; then
+            echo "Running scheduled lead processing..."
+            python src/run_scheduled.py
+          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "Processing Typeform submission..."
+            echo '${{ toJson(github.event.client_payload) }}' > /tmp/typeform_payload.json
+            python src/process_typeform.py /tmp/typeform_payload.json
+          elif [ "${{ github.event.inputs.action }}" = "test_integrations" ]; then
+            echo "Testing integrations..."
+            python src/test_integrations.py
+          else
+            echo "Unknown action"
+            exit 1
+          fi
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: '#ai-test'
+        run: |
+          python -c "
+          import os
+          from slack_sdk import WebClient
+          client = WebClient(token=os.getenv('SLACK_BOT_TOKEN'))
+          client.chat_postMessage(
+              channel=os.getenv('SLACK_CHANNEL_ID'),
+              text='❌ *Agent Workflow Failed*\nCheck GitHub Actions logs for details.'
+          )
+          "
