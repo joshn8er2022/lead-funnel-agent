@@ -13,6 +13,10 @@ from .calendly_check import CalendlyChecker
 from .email_engine import EmailEngine
 from .slack_bot import SlackBot
 from .report_generator import ReportGenerator
+from .conversation_intelligence import ConversationIntelligence
+from .email_reply_handler import EmailReplyHandler
+from .sms_handler import SMSHandler
+from .vapi_handler import VAPIHandler
 
 class LeadAgent:
     """
@@ -26,6 +30,10 @@ class LeadAgent:
         self.email_engine = EmailEngine()
         self.slack = SlackBot()
         self.report_gen = ReportGenerator()
+        self.conversation_ai = ConversationIntelligence()
+        self.email_handler = EmailReplyHandler()
+        self.sms_handler = SMSHandler()
+        self.vapi_handler = VAPIHandler()
         self.claude = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
     def process_typeform_submission(self, payload: Dict[str, Any]) -> Dict[str, Any]:
